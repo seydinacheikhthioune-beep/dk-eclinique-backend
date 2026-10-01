@@ -2,6 +2,7 @@ package com.eclinique.controller;
 
 import com.eclinique.model.StatutFacture;
 import com.eclinique.model.StatutRendezVous;
+import com.eclinique.model.TypeEncaissement;
 import com.eclinique.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +24,7 @@ public class DashboardController {
     private final RendezVousRepository rendezVousRepository;
     private final FactureRepository factureRepository;
     private final MedicamentRepository medicamentRepository;
+    private final EncaissementRepository encaissementRepository;
 
     @GetMapping("/stats")
     public Map<String, Object> stats() {
@@ -39,8 +41,16 @@ public class DashboardController {
         double chiffreAffaires = factureRepository.findByStatut(StatutFacture.PAYEE).stream()
                 .mapToDouble(f -> f.getMontantTotal() == null ? 0 : f.getMontantTotal())
                 .sum();
-        stats.put("chiffreAffaires", chiffreAffaires);
+        double encaissements = valeur(encaissementRepository.sumTotal());
+        // CA encaissé = factures payées + montants perçus à l'accueil (consultations / rendez-vous)
+        stats.put("chiffreAffaires", chiffreAffaires + encaissements);
+        stats.put("encaissementsTotal", encaissements);
+        stats.put("encaissementsAujourdhui", valeur(encaissementRepository.sumBetween(debutJour, finJour)));
+        stats.put("encaissementsConsultations", valeur(encaissementRepository.sumByType(TypeEncaissement.CONSULTATION)));
+        stats.put("encaissementsRendezVous", valeur(encaissementRepository.sumByType(TypeEncaissement.RENDEZVOUS)));
 
         return stats;
     }
+
+    private double valeur(Double montant) { return montant == null ? 0 : montant; }
 }

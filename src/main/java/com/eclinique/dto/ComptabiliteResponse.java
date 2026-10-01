@@ -1,6 +1,8 @@
 package com.eclinique.dto;
 
 public record ComptabiliteResponse(double totalFactures, double totalConsultations,
-                                   double totalHospitalisations, double totalPaiementsEmployes,
-                                   double solde) {
+                                   double totalHospitalisations, double totalEncaissements,
+                                   double encaissementsConsultations, double encaissementsRendezVous,
+                                   double encaissementsAujourdhui, double totalRecettes,
+                                   double totalPaiementsEmployes, double solde) {
 }

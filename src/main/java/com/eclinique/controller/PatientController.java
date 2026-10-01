@@ -6,6 +6,8 @@ import com.eclinique.service.PatientService;
 import com.eclinique.service.NotificationService;
 import com.eclinique.security.UtilisateurPrincipal;
 import com.eclinique.service.RendezVousService;
+import com.eclinique.service.EncaissementService;
+import com.eclinique.model.TypeEncaissement;
 import com.eclinique.model.RendezVous;
 import java.time.LocalDateTime;
 import jakarta.validation.Valid;
@@ -28,6 +30,7 @@ public class PatientController {
     private final PatientService patientService;
     private final NotificationService notificationService;
     private final RendezVousService rendezVousService;
+    private final EncaissementService encaissementService;
 
     @GetMapping
     public List<Patient> findAll(@RequestParam(required = false) String recherche) {
@@ -48,18 +51,26 @@ public class PatientController {
                                           @RequestParam(required = false) String suite,
                                           @RequestParam(required = false) Long medecinId,
                                           @RequestParam(required = false) String typeConsultation,
+                                          @RequestParam(required = false) Double montant,
                                           @RequestParam(required = false) Double montantConsultation,
                                           @RequestParam(required = false) LocalDateTime dateHeure,
                                           @RequestParam(required = false, defaultValue = "30") Integer dureeMinutes,
                                           @RequestParam(required = false) String motif,
                                           @AuthenticationPrincipal UtilisateurPrincipal principal) {
+        // "montantConsultation" est conservé pour compatibilité avec les anciens clients
+        Double montantPercu = montant != null ? montant : montantConsultation;
+        boolean rendezVous = "RENDEZVOUS".equalsIgnoreCase(suite);
+        boolean consultation = "CONSULTATION".equalsIgnoreCase(suite);
+        if ((rendezVous || consultation) && (montantPercu == null || montantPercu < 0)) {
+            throw new IllegalArgumentException("Un montant positif est obligatoire pour une consultation ou un rendez-vous");
+        }
+        if (rendezVous && (dateHeure == null || medecinId == null)) {
+            throw new IllegalArgumentException("La date, l'heure et le médecin sont obligatoires pour un rendez-vous");
+        }
         Patient cree = patientService.create(patient);
         boolean receptionniste = principal != null && principal.getAuthorities().stream()
                 .anyMatch(authority -> "ROLE_RECEPTIONNISTE".equals(authority.getAuthority()));
-        if (receptionniste && "RENDEZVOUS".equalsIgnoreCase(suite)) {
-            if (dateHeure == null || medecinId == null) {
-                throw new IllegalArgumentException("La date, l'heure et le médecin sont obligatoires pour un rendez-vous");
-            }
+        if (rendezVous) {
             RendezVous rdv = rendezVousService.create(RendezVous.builder()
                     .patient(cree)
                     .medecin(com.eclinique.model.Utilisateur.builder().id(medecinId).build())
@@ -67,9 +78,13 @@ public class PatientController {
                     .dureeMinutes(dureeMinutes)
                     .motif(motif)
                     .build());
-            notificationService.notifierNouveauPatient(cree, suite, medecinId, rdv.getId(), typeConsultation, montantConsultation);
-        } else if (receptionniste && "CONSULTATION".equalsIgnoreCase(suite)) {
-            notificationService.notifierNouveauPatient(cree, suite, medecinId, null, typeConsultation, montantConsultation);
+            encaissementService.enregistrer(cree, TypeEncaissement.RENDEZVOUS, montantPercu, medecinId,
+                    null, rdv.getId(), principal);
+            notificationService.notifierNouveauPatient(cree, suite, medecinId, rdv.getId(), typeConsultation, montantPercu);
+        } else if (consultation) {
+            encaissementService.enregistrer(cree, TypeEncaissement.CONSULTATION, montantPercu, medecinId,
+                    typeConsultation, null, principal);
+            notificationService.notifierNouveauPatient(cree, suite, medecinId, null, typeConsultation, montantPercu);
         } else if (receptionniste) {
             notificationService.notifierNouveauPatient(cree);
         }
