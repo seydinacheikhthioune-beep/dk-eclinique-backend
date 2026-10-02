@@ -55,6 +55,10 @@ ainsi que le compte administrateur par défaut.
 | `JWT_SECRET` | Clé de signature des tokens | valeur de dev (à changer !) |
 | `DB_POOL_SIZE` | Taille du pool de connexions | `5` |
 | `PORT` | Port HTTP (fourni par Railway) | `8282` |
+| `MAIL_HOST`, `MAIL_PORT` | Serveur SMTP pour envoyer factures et exports (ex. `smtp.gmail.com`, `587`) | — (envoi désactivé) |
+| `MAIL_USERNAME`, `MAIL_PASSWORD` | Compte SMTP (Gmail : mot de passe d'application, pas le mot de passe du compte) | — |
+| `MAIL_FROM`, `MAIL_FROM_NAME` | Adresse et nom de l'expéditeur | `MAIL_USERNAME`, `SEYNI SY MEDICAL` |
+| `COMPTABLE_EMAIL` | Destinataire(s) par défaut de l'export comptable, séparés par des virgules | — |
 
 ## En local
 

@@ -25,6 +25,7 @@ public class PdfService {
     private static final Font SOUS_TITRE_FONT = new Font(Font.FontFamily.HELVETICA, 13, Font.BOLD, new BaseColor(25, 60, 110));
     private static final Font NORMAL_FONT = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL);
     private static final Font GRAS_FONT = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD);
+    private static final Font ENTETE_TABLE_FONT = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD, BaseColor.WHITE);
     private static final Font PETIT_FONT = new Font(Font.FontFamily.HELVETICA, 8, Font.ITALIC, BaseColor.GRAY);
 
     // ==================== REÇU DE FACTURE ====================
@@ -117,6 +118,92 @@ public class PdfService {
             return out.toByteArray();
         } catch (DocumentException e) {
             throw new RuntimeException("Erreur lors de la génération du reçu PDF", e);
+        }
+    }
+
+    // ==================== FACTURE ASSURANCE / IPM ====================
+
+    public byte[] genererFactureOrganisme(com.eclinique.dto.FactureOrganismeResponse facture) {
+        try {
+            Document document = new Document(PageSize.A4.rotate(), 30, 30, 30, 30);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            Organisme o = facture.organisme();
+            enTete(document, "FACTURE " + (o.getType() == TypeOrganisme.IPM ? "IPM" : "ASSURANCE"));
+
+            PdfPTable blocs = new PdfPTable(2);
+            blocs.setWidthPercentage(100);
+            PdfPTable gauche = new PdfPTable(2);
+            ajouterLigneInfo(gauche, "Facturer à :", o.getNom());
+            if (o.getContact() != null && !o.getContact().isBlank()) ajouterLigneInfo(gauche, "À l'attention de :", o.getContact());
+            ajouterLigneInfo(gauche, "Adresse :", safeText(o.getAdresse()));
+            if (o.getTelephone() != null) ajouterLigneInfo(gauche, "Téléphone :", o.getTelephone());
+            if (o.getNinea() != null) ajouterLigneInfo(gauche, "NINEA :", o.getNinea());
+            PdfPTable droite = new PdfPTable(2);
+            ajouterLigneInfo(droite, "Numéro :", facture.numero());
+            ajouterLigneInfo(droite, "Date d'émission :", facture.dateEmission().format(DATE_FMT));
+            ajouterLigneInfo(droite, "Période :", facture.periodeDebut().format(DATE_FMT) + " au " + facture.periodeFin().format(DATE_FMT));
+            ajouterLigneInfo(droite, "Statut :", traduireStatutFacture(facture.statut()));
+            PdfPCell cg = new PdfPCell(gauche);
+            cg.setBorder(Rectangle.NO_BORDER);
+            PdfPCell cd = new PdfPCell(droite);
+            cd.setBorder(Rectangle.NO_BORDER);
+            blocs.addCell(cg);
+            blocs.addCell(cd);
+            document.add(blocs);
+            document.add(new Paragraph(" "));
+
+            PdfPTable table = new PdfPTable(new float[]{0.5f, 1.3f, 3, 1.6f, 2.4f, 2, 1.5f, 1.5f, 1.5f});
+            table.setWidthPercentage(100);
+            table.setHeaderRows(1);
+            for (String t : List.of("#", "Date", "Patient / assuré", "Matricule", "Acte", "Médecin", "Montant", "Part patient", "À payer")) {
+                enteteCellule(table, t);
+            }
+            int i = 1;
+            double totalMontant = 0, totalPatient = 0;
+            for (var l : facture.lignes()) {
+                celluleTexteCentre(table, String.valueOf(i++));
+                celluleTexte(table, l.date() == null ? "-" : l.date().format(DATE_FMT));
+                celluleTexte(table, safeText(l.patientNom()) + (l.numeroDossier() != null ? "\n" + l.numeroDossier() : ""));
+                celluleTexte(table, safeText(l.matriculeAssure()));
+                celluleTexte(table, safeText(l.acte()) + (l.reference() != null ? "\n" + l.reference() : ""));
+                celluleTexte(table, safeText(l.medecinNom()));
+                celluleTexteDroite(table, formatMontant(l.montant()));
+                celluleTexteDroite(table, formatMontant(l.partPatient()));
+                celluleTexteDroite(table, formatMontant(l.partOrganisme()));
+                totalMontant += l.montant();
+                totalPatient += l.partPatient();
+            }
+            PdfPCell libelle = new PdfPCell(new Phrase("Total (" + facture.lignes().size() + " prise(s) en charge)", GRAS_FONT));
+            libelle.setColspan(6);
+            libelle.setPadding(5);
+            table.addCell(libelle);
+            for (double v : new double[]{totalMontant, totalPatient, facture.montantTotal()}) {
+                PdfPCell c = new PdfPCell(new Phrase(formatMontant(v), GRAS_FONT));
+                c.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                c.setPadding(5);
+                table.addCell(c);
+            }
+            document.add(table);
+
+            Paragraph arrete = new Paragraph("Arrêtée la présente facture à la somme de "
+                    + formatMontant(facture.montantTotal()) + " FCFA.", GRAS_FONT);
+            arrete.setSpacingBefore(12);
+            document.add(arrete);
+            if (facture.observations() != null && !facture.observations().isBlank()) {
+                document.add(new Paragraph("Observations : " + facture.observations(), NORMAL_FONT));
+            }
+            Paragraph signature = new Paragraph("La Direction", GRAS_FONT);
+            signature.setAlignment(Element.ALIGN_RIGHT);
+            signature.setSpacingBefore(30);
+            document.add(signature);
+
+            document.close();
+            return out.toByteArray();
+        } catch (DocumentException e) {
+            throw new RuntimeException("Erreur lors de la génération de la facture organisme PDF", e);
         }
     }
 
@@ -259,9 +346,9 @@ public class PdfService {
     }
 
     private void enteteCellule(PdfPTable table, String texte) {
-        PdfPCell cell = new PdfPCell(new Phrase(texte, GRAS_FONT));
+        // Police dédiée : modifier GRAS_FONT (partagée) rendait blanc tout le texte gras écrit ensuite
+        PdfPCell cell = new PdfPCell(new Phrase(texte, ENTETE_TABLE_FONT));
         cell.setBackgroundColor(new BaseColor(25, 60, 110));
-        cell.getPhrase().getFont().setColor(BaseColor.WHITE);
         cell.setPadding(5);
         table.addCell(cell);
     }
@@ -292,7 +379,7 @@ public class PdfService {
 
     private String formatMontant(Double m) {
         if (m == null) return "0";
-        return String.format("%,.0f", m).replace(",", " ");
+        return String.format(java.util.Locale.ROOT, "%,.0f", m).replace(",", " ");
     }
 
     private String traduireStatutFacture(StatutFacture s) {

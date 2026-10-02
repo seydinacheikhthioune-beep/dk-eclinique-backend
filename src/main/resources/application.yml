@@ -31,6 +31,20 @@ spring:
         jdbc:
           time_zone: UTC
 
+  # ==== E-mails (factures, exports comptables) ====
+  # Exemple Gmail : MAIL_HOST=smtp.gmail.com, MAIL_PORT=587, MAIL_USERNAME=adresse, MAIL_PASSWORD=mot de passe d'application
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${MAIL_SMTP_AUTH:true}
+      mail.smtp.starttls.enable: ${MAIL_STARTTLS:true}
+      mail.smtp.connectiontimeout: 10000
+      mail.smtp.timeout: 15000
+      mail.smtp.writetimeout: 15000
+
   servlet:
     multipart:
       max-file-size: 10MB
@@ -44,6 +58,12 @@ app:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
   stock:
     seuil-alerte-defaut: 10
+  mail:
+    # Adresse d'expédition (par défaut MAIL_USERNAME) et nom affiché
+    expediteur: ${MAIL_FROM:${MAIL_USERNAME:}}
+    nom-expediteur: ${MAIL_FROM_NAME:SEYNI SY MEDICAL}
+    # Destinataire par défaut des exports comptables (plusieurs adresses séparées par des virgules)
+    comptable: ${COMPTABLE_EMAIL:}
 
 springdoc:
   swagger-ui:

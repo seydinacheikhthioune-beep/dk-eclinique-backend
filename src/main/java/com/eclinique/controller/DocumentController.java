@@ -4,6 +4,7 @@ import com.eclinique.model.Consultation;
 import com.eclinique.model.Facture;
 import com.eclinique.model.Patient;
 import com.eclinique.service.ConsultationService;
+import com.eclinique.service.FactureOrganismeService;
 import com.eclinique.service.FactureService;
 import com.eclinique.service.PatientService;
 import com.eclinique.service.PdfService;
@@ -28,12 +29,20 @@ public class DocumentController {
     private final FactureService factureService;
     private final PatientService patientService;
     private final ConsultationService consultationService;
+    private final FactureOrganismeService factureOrganismeService;
 
     @GetMapping("/factures/{id}/recu")
     public ResponseEntity<byte[]> recuFacture(@PathVariable Long id) {
         Facture facture = factureService.findById(id);
         byte[] pdf = pdfService.genererRecuFacture(facture);
         return construireReponsePdf(pdf, "recu_" + facture.getNumeroFacture() + ".pdf");
+    }
+
+    @GetMapping("/factures-organismes/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','RECEPTIONNISTE')")
+    public ResponseEntity<byte[]> factureOrganisme(@PathVariable Long id) {
+        var facture = factureOrganismeService.findById(id);
+        return construireReponsePdf(pdfService.genererFactureOrganisme(facture), "facture_" + facture.numero() + ".pdf");
     }
 
     @GetMapping("/patients/{id}/rapport-medical")

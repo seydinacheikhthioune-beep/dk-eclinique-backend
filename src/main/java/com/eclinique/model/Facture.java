@@ -72,6 +72,11 @@ public class Facture {
     /** Renseigné quand la part organisme a été incluse dans une facture organisme. */
     private Long factureOrganismeId;
 
+    /** Dernier envoi par e-mail du document : date et destinataires. */
+    private LocalDateTime dateEnvoi;
+    @Column(length = 500)
+    private String envoyeA;
+
     /** Les factures antérieures au tiers-payant sont entièrement à la charge du patient. */
     public double partOrganismeEffective() { return partOrganisme != null ? partOrganisme : 0; }
     public double partPatientEffective() {

@@ -48,4 +48,9 @@ public class FactureOrganisme {
     private String observations;
 
     private String creeParNom;
+
+    /** Dernier envoi par e-mail du document : date et destinataires. */
+    private LocalDateTime dateEnvoi;
+    @Column(length = 500)
+    private String envoyeA;
 }

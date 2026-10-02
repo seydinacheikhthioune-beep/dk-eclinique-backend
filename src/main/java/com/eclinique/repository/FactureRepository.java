@@ -21,11 +21,11 @@ public interface FactureRepository extends JpaRepository<Facture, Long> {
     @Query("select f from Facture f where f.statut <> com.eclinique.model.StatutFacture.ANNULEE and f.dateFacture >= :debut and f.dateFacture < :fin")
     List<Facture> findNonAnnuleesBetween(java.time.LocalDateTime debut, java.time.LocalDateTime fin);
     @Override
-    @EntityGraph(attributePaths = {"patient", "lignes"})
+    @EntityGraph(attributePaths = {"patient", "patient.organisme", "organisme", "lignes"})
     List<Facture> findAll();
 
     @Override
-    @EntityGraph(attributePaths = {"patient", "lignes"})
+    @EntityGraph(attributePaths = {"patient", "patient.organisme", "organisme", "lignes"})
     Optional<Facture> findById(Long id);
 
     @Query("""
@@ -36,19 +36,23 @@ public interface FactureRepository extends JpaRepository<Facture, Long> {
             order by f.dateFacture asc""")
     List<Facture> findAFacturer(Long organismeId, java.time.LocalDateTime debut, java.time.LocalDateTime fin);
 
-    @EntityGraph(attributePaths = {"patient"})
+    @EntityGraph(attributePaths = {"patient", "patient.organisme", "organisme"})
     List<Facture> findByFactureOrganismeIdOrderByDateFactureAsc(Long factureOrganismeId);
 
-    @EntityGraph(attributePaths = {"patient"})
+    @EntityGraph(attributePaths = {"patient", "patient.organisme", "organisme"})
     @Query("select f from Facture f where f.organisme is not null and f.statut <> com.eclinique.model.StatutFacture.ANNULEE")
     List<Facture> findTiersPayantNonAnnulees();
 
+    @EntityGraph(attributePaths = {"patient", "patient.organisme", "organisme"})
+    List<Facture> findByDateFactureGreaterThanEqualAndDateFactureLessThanOrderByDateFactureAsc(
+            java.time.LocalDateTime debut, java.time.LocalDateTime fin);
+
     Optional<Facture> findByNumeroFacture(String numeroFacture);
-    @EntityGraph(attributePaths = {"patient", "lignes"})
+    @EntityGraph(attributePaths = {"patient", "patient.organisme", "organisme", "lignes"})
     List<Facture> findByPatientId(Long patientId);
-    @EntityGraph(attributePaths = {"patient", "lignes"})
+    @EntityGraph(attributePaths = {"patient", "patient.organisme", "organisme", "lignes"})
     List<Facture> findByStatut(StatutFacture statut);
 
-    @EntityGraph(attributePaths = {"patient", "lignes"})
+    @EntityGraph(attributePaths = {"patient", "patient.organisme", "organisme", "lignes"})
     List<Facture> findByDateAdmissionIsNotNullOrderByDateAdmissionDesc();
 }

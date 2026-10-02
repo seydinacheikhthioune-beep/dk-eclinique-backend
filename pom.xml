@@ -94,6 +94,12 @@
             <version>${itext.version}</version>
         </dependency>
 
+        <!-- Envoi des factures et exports comptables par e-mail -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
         <!-- Import de fichiers Excel et Word -->
         <dependency>
             <groupId>org.apache.poi</groupId>
