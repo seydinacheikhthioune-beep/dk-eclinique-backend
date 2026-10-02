@@ -2,6 +2,8 @@ package com.eclinique.service;
 
 import com.eclinique.audit.Audite;
 import com.eclinique.audit.TypeActionAudit;
+import com.eclinique.dto.MotDePasseRequest;
+import com.eclinique.dto.ProfilRequest;
 import com.eclinique.dto.UtilisateurRequest;
 import com.eclinique.exception.BusinessException;
 import com.eclinique.exception.ResourceNotFoundException;
@@ -95,5 +97,30 @@ public class UtilisateurService {
     @Audite(action = TypeActionAudit.SUPPRESSION, entite = "Utilisateur")
     public void delete(Long id) {
         utilisateurRepository.deleteById(id);
+    }
+
+    @Audite(action = TypeActionAudit.MODIFICATION, entite = "Profil")
+    public Utilisateur modifierProfil(Long id, ProfilRequest req) {
+        Utilisateur u = findById(id);
+        String email = req.getEmail() == null ? null : req.getEmail().trim();
+        if (email != null && !email.isBlank() && !email.equalsIgnoreCase(u.getEmail())
+                && utilisateurRepository.existsByEmail(email)) {
+            throw new BusinessException("Cet email est déjà utilisé");
+        }
+        u.setNom(req.getNom().trim());
+        u.setPrenom(req.getPrenom().trim());
+        u.setEmail(email == null || email.isBlank() ? null : email);
+        u.setTelephone(req.getTelephone());
+        return utilisateurRepository.save(u);
+    }
+
+    @Audite(action = TypeActionAudit.MODIFICATION, entite = "MotDePasse")
+    public void changerMotDePasse(Long id, MotDePasseRequest req) {
+        Utilisateur u = findById(id);
+        if (!passwordEncoder.matches(req.getMotDePasseActuel(), u.getPassword())) {
+            throw new BusinessException("Mot de passe actuel incorrect");
+        }
+        u.setPassword(passwordEncoder.encode(req.getNouveauMotDePasse()));
+        utilisateurRepository.save(u);
     }
 }
