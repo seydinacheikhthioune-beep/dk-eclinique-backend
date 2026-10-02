@@ -47,6 +47,7 @@ public class DashboardController {
         stats.put("encaissementsTotal", encaissements);
         stats.put("encaissementsAujourdhui", valeur(encaissementRepository.sumBetween(debutJour, finJour)));
         stats.put("encaissementsConsultations", valeur(encaissementRepository.sumByType(TypeEncaissement.CONSULTATION)));
+        stats.put("priseEnChargeOrganismes", valeur(encaissementRepository.sumPartOrganisme()));
         stats.put("encaissementsRendezVous", valeur(encaissementRepository.sumByType(TypeEncaissement.RENDEZVOUS)));
 
         return stats;

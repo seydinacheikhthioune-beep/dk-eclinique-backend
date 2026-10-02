@@ -13,6 +13,10 @@ import java.time.LocalDateTime;
 @Table(name = "encaissements")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Encaissement {
+    /** Les encaissements antérieurs à la prise en charge n'ont pas de part patient : tout était payé comptant. */
+    public double partPatientEffective() { return partPatient != null ? partPatient : montant; }
+    public double partOrganismeEffective() { return partOrganisme != null ? partOrganisme : 0; }
+
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
@@ -31,6 +35,15 @@ public class Encaissement {
     private String medecinNom;
 
     private String typeConsultation;
+
+    /** Prise en charge par un assureur / une IPM : partOrganisme + partPatient = montant. */
+    private Long organismeId;
+    private String organismeNom;
+    private Double partOrganisme;
+    private Double partPatient;
+    private String matriculeAssure;
+    /** Renseigné quand la prise en charge a été incluse dans une facture organisme. */
+    private Long factureOrganismeId;
     private Long rendezVousId;
 
     private Long enregistreParId;

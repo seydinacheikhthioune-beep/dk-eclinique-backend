@@ -16,6 +16,10 @@ public interface FactureRepository extends JpaRepository<Facture, Long> {
     Double sumConsultations();
     @Query("select coalesce(sum(f.montantTotal), 0) from Facture f where f.dateAdmission is not null")
     Double sumHospitalisations();
+    @Query("select coalesce(sum(f.montantTotal), 0) from Facture f where f.statut <> com.eclinique.model.StatutFacture.ANNULEE")
+    Double sumNonAnnulees();
+    @Query("select f from Facture f where f.statut <> com.eclinique.model.StatutFacture.ANNULEE and f.dateFacture >= :debut and f.dateFacture < :fin")
+    List<Facture> findNonAnnuleesBetween(java.time.LocalDateTime debut, java.time.LocalDateTime fin);
     @Override
     @EntityGraph(attributePaths = {"patient", "lignes"})
     List<Facture> findAll();

@@ -6,7 +6,9 @@ import com.eclinique.dto.PatientImportResult;
 import com.eclinique.exception.ResourceNotFoundException;
 import com.eclinique.model.Patient;
 import com.eclinique.model.Sexe;
+import com.eclinique.repository.OrganismeRepository;
 import com.eclinique.repository.PatientRepository;
+import com.eclinique.model.Organisme;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DataFormatter;
@@ -41,6 +43,7 @@ import java.time.Year;
 public class PatientService {
 
     private final PatientRepository patientRepository;
+    private final OrganismeRepository organismeRepository;
 
     public List<Patient> findAll() {
         return patientRepository.findAll().stream()
@@ -64,6 +67,7 @@ public class PatientService {
     @Audite(action = TypeActionAudit.CREATION, entite = "Patient")
     public Patient create(Patient patient) {
         patient.setNumeroDossier(genererNumeroDossier());
+        patient.setOrganisme(resoudreOrganisme(patient.getOrganisme()));
         return patientRepository.save(patient);
     }
 
@@ -242,12 +246,20 @@ public class PatientService {
         patient.setAntecedentsMedicaux(donnees.getAntecedentsMedicaux());
         patient.setPersonneAContacter(donnees.getPersonneAContacter());
         patient.setTelephonePersonneAContacter(donnees.getTelephonePersonneAContacter());
+        patient.setOrganisme(resoudreOrganisme(donnees.getOrganisme()));
+        patient.setMatriculeAssure(donnees.getMatriculeAssure());
         return patientRepository.save(patient);
     }
 
     @Audite(action = TypeActionAudit.SUPPRESSION, entite = "Patient")
     public void delete(Long id) {
         patientRepository.deleteById(id);
+    }
+
+    private Organisme resoudreOrganisme(Organisme organisme) {
+        if (organisme == null || organisme.getId() == null) return null;
+        return organismeRepository.findById(organisme.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Organisme introuvable : " + organisme.getId()));
     }
 
     private String genererNumeroDossier() {

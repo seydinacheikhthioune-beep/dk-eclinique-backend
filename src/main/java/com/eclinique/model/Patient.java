@@ -54,6 +54,14 @@ public class Patient {
     @Pattern(regexp = "^$|\\+?[0-9][0-9 .()\\-]{7,20}$", message = "Le numéro de téléphone est invalide")
     private String telephonePersonneAContacter;
 
+    /** Assureur ou IPM qui prend en charge le patient (null = paiement comptant). */
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "organisme_id")
+    private Organisme organisme;
+
+    /** Matricule / numéro d'adhérent auprès de l'organisme. */
+    private String matriculeAssure;
+
     @Builder.Default
     private LocalDateTime dateCreation = LocalDateTime.now();
 

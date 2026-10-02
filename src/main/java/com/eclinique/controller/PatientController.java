@@ -53,6 +53,7 @@ public class PatientController {
                                           @RequestParam(required = false) String typeConsultation,
                                           @RequestParam(required = false) Double montant,
                                           @RequestParam(required = false) Double montantConsultation,
+                                          @RequestParam(required = false) Double partOrganisme,
                                           @RequestParam(required = false) LocalDateTime dateHeure,
                                           @RequestParam(required = false, defaultValue = "30") Integer dureeMinutes,
                                           @RequestParam(required = false) String motif,
@@ -67,6 +68,9 @@ public class PatientController {
         if (rendezVous && (dateHeure == null || medecinId == null)) {
             throw new IllegalArgumentException("La date, l'heure et le médecin sont obligatoires pour un rendez-vous");
         }
+        if (partOrganisme != null && montantPercu != null && (partOrganisme < 0 || partOrganisme > montantPercu)) {
+            throw new IllegalArgumentException("La part prise en charge doit être comprise entre 0 et le montant");
+        }
         Patient cree = patientService.create(patient);
         boolean receptionniste = principal != null && principal.getAuthorities().stream()
                 .anyMatch(authority -> "ROLE_RECEPTIONNISTE".equals(authority.getAuthority()));
@@ -79,11 +83,11 @@ public class PatientController {
                     .motif(motif)
                     .build());
             encaissementService.enregistrer(cree, TypeEncaissement.RENDEZVOUS, montantPercu, medecinId,
-                    null, rdv.getId(), principal);
+                    null, rdv.getId(), partOrganisme, principal);
             notificationService.notifierNouveauPatient(cree, suite, medecinId, rdv.getId(), typeConsultation, montantPercu);
         } else if (consultation) {
             encaissementService.enregistrer(cree, TypeEncaissement.CONSULTATION, montantPercu, medecinId,
-                    typeConsultation, null, principal);
+                    typeConsultation, null, partOrganisme, principal);
             notificationService.notifierNouveauPatient(cree, suite, medecinId, null, typeConsultation, montantPercu);
         } else if (receptionniste) {
             notificationService.notifierNouveauPatient(cree);

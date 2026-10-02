@@ -1,5 +1,6 @@
 package com.eclinique.controller;
 
+import com.eclinique.dto.BilanPeriodeResponse;
 import com.eclinique.dto.ComptabiliteResponse;
 import com.eclinique.dto.EncaissementResponse;
 import com.eclinique.dto.PaiementEmployeRequest;
@@ -26,6 +27,12 @@ public class ComptabiliteController {
 
     @GetMapping("/resume")
     public ComptabiliteResponse resume() { return service.resume(); }
+
+    @GetMapping("/bilan")
+    public List<BilanPeriodeResponse> bilan(@RequestParam(defaultValue = "MOIS") String periode,
+                                            @RequestParam(required = false) Integer annee) {
+        return service.bilan(periode, annee != null ? annee : java.time.Year.now().getValue());
+    }
 
     @GetMapping("/encaissements")
     public List<EncaissementResponse> encaissements() { return encaissementService.findAll(); }

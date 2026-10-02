@@ -1,6 +1,9 @@
 package com.eclinique.config;
 
+import com.eclinique.model.Organisme;
 import com.eclinique.model.Role;
+import com.eclinique.model.TypeOrganisme;
+import com.eclinique.repository.OrganismeRepository;
 import com.eclinique.model.Patient;
 import com.eclinique.model.Utilisateur;
 import com.eclinique.repository.PatientRepository;
@@ -23,6 +26,7 @@ public class DataInitializer implements CommandLineRunner {
     private final PatientRepository patientRepository;
     private final NotificationService notificationService;
     private final PasswordEncoder passwordEncoder;
+    private final OrganismeRepository organismeRepository;
 
     @Override
     public void run(String... args) {
@@ -40,6 +44,12 @@ public class DataInitializer implements CommandLineRunner {
             System.out.println("=== Compte admin créé : username=admin / password=Admin@123 ===");
         }
 
+        organismeSiAbsent("OLEA", TypeOrganisme.ASSURANCE);
+        organismeSiAbsent("AMSA Assurances", TypeOrganisme.ASSURANCE);
+        organismeSiAbsent("IPM ICS", TypeOrganisme.IPM);
+        organismeSiAbsent("IPM GCO", TypeOrganisme.IPM);
+        organismeSiAbsent("IPM Tobène Power", TypeOrganisme.IPM);
+
         Utilisateur receptionniste = creerSiAbsent("mousampthioune@gmail.com", "moussa.reception", "Thioune", "Moussa", Role.RECEPTIONNISTE, "Reception@123");
         Utilisateur medecin1 = creerSiAbsent("eydina.cheikh.thioune@gmail.com", "dr.eydina", "Thioune", "Eydina Cheikh", Role.MEDECIN, "Medecin@123");
         creerSiAbsent("moussathioune2026@gmail.com", "dr.moussa", "Thioune", "Moussa", Role.MEDECIN, "Medecin@124");
@@ -55,6 +65,13 @@ public class DataInitializer implements CommandLineRunner {
                         .build()));
         if (receptionniste != null && medecin1 != null && patient.getId() != null) {
             notificationService.notifierNouveauPatient(patient, "CONSULTATION", medecin1.getId());
+        }
+    }
+
+    /** Organismes de la zone (Mboro / Darou Khoudoss) ; taux modifiable ensuite par l'admin. */
+    private void organismeSiAbsent(String nom, TypeOrganisme type) {
+        if (!organismeRepository.existsByNomIgnoreCase(nom)) {
+            organismeRepository.save(Organisme.builder().nom(nom).type(type).tauxPriseEnCharge(80.0).build());
         }
     }
 
