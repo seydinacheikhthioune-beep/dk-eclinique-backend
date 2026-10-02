@@ -28,6 +28,21 @@ public interface FactureRepository extends JpaRepository<Facture, Long> {
     @EntityGraph(attributePaths = {"patient", "lignes"})
     Optional<Facture> findById(Long id);
 
+    @Query("""
+            select f from Facture f join fetch f.patient
+            where f.organisme.id = :organismeId and f.factureOrganismeId is null and f.partOrganisme > 0
+              and f.statut <> com.eclinique.model.StatutFacture.ANNULEE
+              and f.dateFacture >= :debut and f.dateFacture < :fin
+            order by f.dateFacture asc""")
+    List<Facture> findAFacturer(Long organismeId, java.time.LocalDateTime debut, java.time.LocalDateTime fin);
+
+    @EntityGraph(attributePaths = {"patient"})
+    List<Facture> findByFactureOrganismeIdOrderByDateFactureAsc(Long factureOrganismeId);
+
+    @EntityGraph(attributePaths = {"patient"})
+    @Query("select f from Facture f where f.organisme is not null and f.statut <> com.eclinique.model.StatutFacture.ANNULEE")
+    List<Facture> findTiersPayantNonAnnulees();
+
     Optional<Facture> findByNumeroFacture(String numeroFacture);
     @EntityGraph(attributePaths = {"patient", "lignes"})
     List<Facture> findByPatientId(Long patientId);

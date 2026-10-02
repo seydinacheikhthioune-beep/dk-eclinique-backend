@@ -28,9 +28,9 @@ public class RendezVousController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime debut,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fin) {
 
+        if (debut != null && fin != null) return rendezVousService.findEntrePeriodes(debut, fin, medecinId);
         if (patientId != null) return rendezVousService.findByPatient(patientId);
         if (medecinId != null) return rendezVousService.findByMedecin(medecinId);
-        if (debut != null && fin != null) return rendezVousService.findEntrePeriodes(debut, fin);
         return rendezVousService.findAll();
     }
 

@@ -59,6 +59,25 @@ public class Facture {
     private Double prixJournalierHospitalisation;
     private Integer joursHospitalisation;
 
+    /** Tiers-payant : organisme qui règle partOrganisme ; le patient ne paie que partPatient. */
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "organisme_id")
+    private Organisme organisme;
+
+    private String matriculeAssure;
+    private Double tauxPriseEnCharge;
+    private Double partOrganisme;
+    private Double partPatient;
+
+    /** Renseigné quand la part organisme a été incluse dans une facture organisme. */
+    private Long factureOrganismeId;
+
+    /** Les factures antérieures au tiers-payant sont entièrement à la charge du patient. */
+    public double partOrganismeEffective() { return partOrganisme != null ? partOrganisme : 0; }
+    public double partPatientEffective() {
+        return partPatient != null ? partPatient : (montantTotal == null ? 0 : montantTotal);
+    }
+
     @OneToMany(mappedBy = "facture", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<LigneFacture> lignes = new ArrayList<>();

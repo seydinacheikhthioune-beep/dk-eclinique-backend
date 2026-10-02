@@ -1,8 +1,8 @@
 package com.eclinique.controller;
 
-import com.eclinique.dto.EncaissementResponse;
 import com.eclinique.dto.FactureOrganismeRequest;
 import com.eclinique.dto.FactureOrganismeResponse;
+import com.eclinique.dto.PriseEnChargeResponse;
 import com.eclinique.model.ModePaiement;
 import com.eclinique.security.UtilisateurPrincipal;
 import com.eclinique.service.FactureOrganismeService;
@@ -31,7 +31,7 @@ public class FactureOrganismeController {
     public FactureOrganismeResponse findById(@PathVariable Long id) { return service.findById(id); }
 
     @PostMapping("/apercu")
-    public List<EncaissementResponse> apercu(@Valid @RequestBody FactureOrganismeRequest request) {
+    public List<PriseEnChargeResponse> apercu(@Valid @RequestBody FactureOrganismeRequest request) {
         return service.aFacturer(request);
     }
 

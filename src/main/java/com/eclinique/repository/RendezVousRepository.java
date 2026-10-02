@@ -10,21 +10,21 @@ import java.util.List;
 
 public interface RendezVousRepository extends JpaRepository<RendezVous, Long> {
     @Override
-    @EntityGraph(attributePaths = {"patient", "medecin"})
+    @EntityGraph(attributePaths = {"patient", "patient.organisme", "medecin"})
     List<RendezVous> findAll();
 
     @Override
-    @EntityGraph(attributePaths = {"patient", "medecin"})
+    @EntityGraph(attributePaths = {"patient", "patient.organisme", "medecin"})
     java.util.Optional<RendezVous> findById(Long id);
 
-    @EntityGraph(attributePaths = {"patient", "medecin"})
+    @EntityGraph(attributePaths = {"patient", "patient.organisme", "medecin"})
     List<RendezVous> findByPatientId(Long patientId);
-    @EntityGraph(attributePaths = {"patient", "medecin"})
+    @EntityGraph(attributePaths = {"patient", "patient.organisme", "medecin"})
     List<RendezVous> findByMedecinId(Long medecinId);
-    @EntityGraph(attributePaths = {"patient", "medecin"})
+    @EntityGraph(attributePaths = {"patient", "patient.organisme", "medecin"})
     List<RendezVous> findByStatut(StatutRendezVous statut);
-    @EntityGraph(attributePaths = {"patient", "medecin"})
+    @EntityGraph(attributePaths = {"patient", "patient.organisme", "medecin"})
     List<RendezVous> findByDateHeureBetween(LocalDateTime debut, LocalDateTime fin);
-    @EntityGraph(attributePaths = {"patient", "medecin"})
+    @EntityGraph(attributePaths = {"patient", "patient.organisme", "medecin"})
     List<RendezVous> findByMedecinIdAndDateHeureBetween(Long medecinId, LocalDateTime debut, LocalDateTime fin);
 }

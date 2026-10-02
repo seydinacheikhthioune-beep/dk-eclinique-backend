@@ -23,6 +23,11 @@ public class FactureRequest {
     @PositiveOrZero
     private Double prixJournalierHospitalisation;
     private ModePaiement modePaiement;
+    /** false pour facturer tout au patient même s'il est assuré ; null/true applique le tiers-payant. */
+    private Boolean tiersPayant;
+    /** Part organisme saisie à la main ; null = calculée avec le taux du patient. */
+    @PositiveOrZero
+    private Double partOrganisme;
     @NotEmpty
     @Valid
     private List<LigneFactureRequest> lignes;

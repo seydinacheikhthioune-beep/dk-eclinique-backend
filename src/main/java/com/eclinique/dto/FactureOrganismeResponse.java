@@ -13,9 +13,9 @@ public record FactureOrganismeResponse(Long id, String numero, Organisme organis
                                        LocalDate periodeFin, LocalDateTime dateEmission, double montantTotal,
                                        StatutFacture statut, ModePaiement modePaiement, LocalDateTime datePaiement,
                                        String observations, String creeParNom, int nombreLignes,
-                                       List<EncaissementResponse> lignes) {
+                                       List<PriseEnChargeResponse> lignes) {
 
-    public static FactureOrganismeResponse of(FactureOrganisme f, List<EncaissementResponse> lignes, int nombreLignes) {
+    public static FactureOrganismeResponse of(FactureOrganisme f, List<PriseEnChargeResponse> lignes, int nombreLignes) {
         return new FactureOrganismeResponse(f.getId(), f.getNumero(), f.getOrganisme(), f.getPeriodeDebut(),
                 f.getPeriodeFin(), f.getDateEmission(), f.getMontantTotal(), f.getStatut(), f.getModePaiement(),
                 f.getDatePaiement(), f.getObservations(), f.getCreeParNom(), nombreLignes, lignes);

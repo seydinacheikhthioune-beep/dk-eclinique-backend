@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -24,7 +25,8 @@ public class EncaissementService {
 
     /**
      * @param partOrganisme part prise en charge par l'organisme du patient ; si null, elle est calculée
-     *                      avec le taux par défaut de l'organisme. Ignorée si le patient n'a pas d'organisme.
+     *                      avec le taux du patient (ou celui de l'organisme). Ignorée si le patient n'a pas
+     *                      d'organisme actif ou si sa couverture a expiré.
      */
     public Encaissement enregistrer(Patient patient, TypeEncaissement type, Double montant, Long medecinId,
                                     String typeConsultation, Long rendezVousId, Double partOrganisme,
@@ -32,11 +34,11 @@ public class EncaissementService {
         if (montant == null || montant < 0) {
             throw new IllegalArgumentException("Le montant doit être positif");
         }
-        Organisme organisme = patient.getOrganisme();
+        double taux = patient.tauxPriseEnChargeAu(LocalDate.now());
+        Organisme organisme = taux > 0 ? patient.getOrganisme() : null;
         double priseEnCharge = 0;
         if (organisme != null) {
-            priseEnCharge = partOrganisme != null ? partOrganisme
-                    : Math.round(montant * valeur(organisme.getTauxPriseEnCharge()) / 100.0);
+            priseEnCharge = partOrganisme != null ? partOrganisme : Math.round(montant * taux / 100.0);
             if (priseEnCharge < 0 || priseEnCharge > montant) {
                 throw new IllegalArgumentException("La part prise en charge doit être comprise entre 0 et le montant");
             }
@@ -68,6 +70,4 @@ public class EncaissementService {
         return encaissementRepository.findAllByOrderByDateEncaissementDesc().stream()
                 .map(EncaissementResponse::of).toList();
     }
-
-    private double valeur(Double nombre) { return nombre == null ? 0 : nombre; }
 }

@@ -255,6 +255,8 @@ public class PatientService {
         patient.setTelephonePersonneAContacter(donnees.getTelephonePersonneAContacter());
         patient.setOrganisme(resoudreOrganisme(donnees.getOrganisme()));
         patient.setMatriculeAssure(donnees.getMatriculeAssure());
+        patient.setTauxPriseEnCharge(donnees.getTauxPriseEnCharge());
+        patient.setDateFinCouverture(donnees.getDateFinCouverture());
         return patientRepository.save(patient);
     }
 
@@ -271,6 +273,10 @@ public class PatientService {
         if (payees > 0) {
             throw new BusinessException("Impossible de supprimer " + patient.getPrenom() + " " + patient.getNom()
                     + " : " + payees + " facture(s) payée(s) lui sont rattachées.");
+        }
+        if (factures.stream().anyMatch(f -> f.getFactureOrganismeId() != null)) {
+            throw new BusinessException("Impossible de supprimer " + patient.getPrenom() + " " + patient.getNom()
+                    + " : une de ses factures est incluse dans une facture assurance / IPM.");
         }
         factureRepository.deleteAll(factures);
         notificationRepository.deleteByPatientId(id);

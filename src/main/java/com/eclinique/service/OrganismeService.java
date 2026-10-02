@@ -2,12 +2,12 @@ package com.eclinique.service;
 
 import com.eclinique.dto.CreanceOrganismeResponse;
 import com.eclinique.exception.ResourceNotFoundException;
-import com.eclinique.model.Encaissement;
 import com.eclinique.model.FactureOrganisme;
 import com.eclinique.model.Organisme;
 import com.eclinique.model.StatutFacture;
 import com.eclinique.repository.EncaissementRepository;
 import com.eclinique.repository.FactureOrganismeRepository;
+import com.eclinique.repository.FactureRepository;
 import com.eclinique.repository.OrganismeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +25,7 @@ public class OrganismeService {
     private final OrganismeRepository organismeRepository;
     private final EncaissementRepository encaissementRepository;
     private final FactureOrganismeRepository factureOrganismeRepository;
+    private final FactureRepository factureRepository;
 
     @Transactional(readOnly = true)
     public List<Organisme> findAll(boolean actifsSeulement) {
@@ -63,17 +64,23 @@ public class OrganismeService {
     public List<CreanceOrganismeResponse> creances() {
         Map<Long, FactureOrganisme> factures = factureOrganismeRepository.findAll().stream()
                 .collect(Collectors.toMap(FactureOrganisme::getId, Function.identity()));
-        Map<Long, List<Encaissement>> parOrganisme = encaissementRepository.findByOrganismeIdIsNotNull().stream()
-                .collect(Collectors.groupingBy(Encaissement::getOrganismeId));
+        // Prises en charge à l'accueil et factures patients en tiers-payant : (organisme, facture organisme, part)
+        record Prise(Long organismeId, Long factureOrganismeId, double part) {}
+        Map<Long, List<Prise>> parOrganisme = java.util.stream.Stream.concat(
+                encaissementRepository.findByOrganismeIdIsNotNull().stream()
+                        .map(e -> new Prise(e.getOrganismeId(), e.getFactureOrganismeId(), e.partOrganismeEffective())),
+                factureRepository.findTiersPayantNonAnnulees().stream()
+                        .filter(f -> f.partOrganismeEffective() > 0)
+                        .map(f -> new Prise(f.getOrganisme().getId(), f.getFactureOrganismeId(), f.partOrganismeEffective())))
+                .collect(Collectors.groupingBy(Prise::organismeId));
         return organismeRepository.findAllByOrderByNomAsc().stream().map(o -> {
-            List<Encaissement> prises = parOrganisme.getOrDefault(o.getId(), List.of());
+            List<Prise> prises = parOrganisme.getOrDefault(o.getId(), List.of());
             double nonFacture = 0, enAttente = 0, paye = 0;
-            for (Encaissement e : prises) {
-                double part = e.partOrganismeEffective();
-                FactureOrganisme f = e.getFactureOrganismeId() == null ? null : factures.get(e.getFactureOrganismeId());
-                if (f == null) nonFacture += part;
-                else if (f.getStatut() == StatutFacture.PAYEE) paye += part;
-                else enAttente += part;
+            for (Prise p : prises) {
+                FactureOrganisme f = p.factureOrganismeId() == null ? null : factures.get(p.factureOrganismeId());
+                if (f == null) nonFacture += p.part();
+                else if (f.getStatut() == StatutFacture.PAYEE) paye += p.part();
+                else enAttente += p.part();
             }
             return new CreanceOrganismeResponse(o.getId(), o.getNom(), o.getType(), prises.size(),
                     nonFacture + enAttente + paye, nonFacture, enAttente, paye);

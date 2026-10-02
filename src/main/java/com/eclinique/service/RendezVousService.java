@@ -45,8 +45,12 @@ public class RendezVousService {
         return rendezVousRepository.findByMedecinId(medecinId);
     }
 
-    public List<RendezVous> findEntrePeriodes(LocalDateTime debut, LocalDateTime fin) {
-        return rendezVousRepository.findByDateHeureBetween(debut, fin);
+    /** Rendez-vous d'une période (vue calendrier), éventuellement limités à un médecin. */
+    public List<RendezVous> findEntrePeriodes(LocalDateTime debut, LocalDateTime fin, Long medecinId) {
+        List<RendezVous> rdvs = medecinId == null
+                ? rendezVousRepository.findByDateHeureBetween(debut, fin)
+                : rendezVousRepository.findByMedecinIdAndDateHeureBetween(medecinId, debut, fin);
+        return rdvs.stream().sorted(Comparator.comparing(RendezVous::getDateHeure)).toList();
     }
 
     @Audite(action = TypeActionAudit.CREATION, entite = "RendezVous")
@@ -68,12 +72,20 @@ public class RendezVousService {
     @Audite(action = TypeActionAudit.MODIFICATION, entite = "RendezVous")
     public RendezVous update(Long id, RendezVous donnees) {
         RendezVous rdv = findById(id);
-        if (donnees.getDateHeure() != null) {
-            verifierDisponibilite(rdv.getMedecin().getId(), donnees.getDateHeure(),
-                    donnees.getDureeMinutes() == null ? rdv.getDureeMinutes() : donnees.getDureeMinutes(), id);
-            rdv.setDateHeure(donnees.getDateHeure());
+        Utilisateur medecin = rdv.getMedecin();
+        if (donnees.getMedecin() != null && donnees.getMedecin().getId() != null
+                && !donnees.getMedecin().getId().equals(medecin.getId())) {
+            medecin = utilisateurRepository.findById(donnees.getMedecin().getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Médecin introuvable"));
         }
-        if (donnees.getDureeMinutes() != null) rdv.setDureeMinutes(donnees.getDureeMinutes());
+        LocalDateTime dateHeure = donnees.getDateHeure() != null ? donnees.getDateHeure() : rdv.getDateHeure();
+        Integer duree = donnees.getDureeMinutes() != null ? donnees.getDureeMinutes() : rdv.getDureeMinutes();
+        if (donnees.getDateHeure() != null || donnees.getDureeMinutes() != null || medecin != rdv.getMedecin()) {
+            verifierDisponibilite(medecin.getId(), dateHeure, duree == null ? 30 : duree, id);
+        }
+        rdv.setMedecin(medecin);
+        rdv.setDateHeure(dateHeure);
+        rdv.setDureeMinutes(duree);
         if (donnees.getMotif() != null) rdv.setMotif(donnees.getMotif());
         if (donnees.getStatut() != null) rdv.setStatut(donnees.getStatut());
         if (donnees.getNotes() != null) rdv.setNotes(donnees.getNotes());

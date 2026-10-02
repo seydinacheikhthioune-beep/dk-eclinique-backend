@@ -120,6 +120,7 @@ public class FactureService {
             total = total - req.getRemise();
         }
         facture.setMontantTotal(Math.max(total, 0));
+        appliquerTiersPayant(facture, patient, req);
 
         Facture resultat = factureRepository.save(facture);
         notificationService.notifierFacture(resultat.getId(), patient.getId(),
@@ -140,13 +141,41 @@ public class FactureService {
     @Audite(action = TypeActionAudit.ANNULATION, entite = "Facture")
     public Facture annuler(Long id) {
         Facture facture = findById(id);
+        verifierHorsFactureOrganisme(facture);
         facture.setStatut(StatutFacture.ANNULEE);
         return factureRepository.save(facture);
     }
 
     @Audite(action = TypeActionAudit.SUPPRESSION, entite = "Facture")
     public void delete(Long id) {
+        verifierHorsFactureOrganisme(findById(id));
         factureRepository.deleteById(id);
+    }
+
+    private void appliquerTiersPayant(Facture facture, Patient patient, FactureRequest req) {
+        double total = facture.getMontantTotal();
+        double taux = Boolean.FALSE.equals(req.getTiersPayant()) ? 0 : patient.tauxPriseEnChargeAu(LocalDate.now());
+        if (taux <= 0) {
+            facture.setPartOrganisme(0.0);
+            facture.setPartPatient(total);
+            return;
+        }
+        double part = req.getPartOrganisme() != null ? req.getPartOrganisme() : Math.round(total * taux / 100.0);
+        if (part > total) {
+            throw new IllegalArgumentException("La part prise en charge ne peut pas dépasser le total de la facture");
+        }
+        facture.setOrganisme(patient.getOrganisme());
+        facture.setMatriculeAssure(patient.getMatriculeAssure());
+        facture.setTauxPriseEnCharge(taux);
+        facture.setPartOrganisme(part);
+        facture.setPartPatient(total - part);
+    }
+
+    private void verifierHorsFactureOrganisme(Facture facture) {
+        if (facture.getFactureOrganismeId() != null) {
+            throw new IllegalArgumentException("Cette facture est incluse dans une facture assurance / IPM : "
+                    + "annulez d'abord la facture organisme");
+        }
     }
 
     private String genererNumeroFacture() {

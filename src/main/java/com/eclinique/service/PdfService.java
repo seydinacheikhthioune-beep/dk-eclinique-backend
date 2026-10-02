@@ -54,6 +54,11 @@ public class PdfService {
             if (facture.getModePaiement() != null) {
                 ajouterLigneInfo(infos, "Mode de paiement :", traduireModePaiement(facture.getModePaiement()));
             }
+            if (facture.getOrganisme() != null) {
+                ajouterLigneInfo(infos, "Prise en charge :", facture.getOrganisme().getNom()
+                        + (facture.getMatriculeAssure() != null && !facture.getMatriculeAssure().isBlank()
+                        ? " (matricule " + facture.getMatriculeAssure() + ")" : ""));
+            }
             document.add(infos);
 
             document.add(new Paragraph(" "));
@@ -89,9 +94,17 @@ public class PdfService {
             if (facture.getRemise() != null && facture.getRemise() > 0) {
                 ajouterLigneInfo(totaux, "Remise :", formatMontant(facture.getRemise()) + " FCFA");
             }
-            PdfPCell libTotal = new PdfPCell(new Phrase("TOTAL À PAYER :", GRAS_FONT));
+            double aPayer = total;
+            if (facture.partOrganismeEffective() > 0) {
+                ajouterLigneInfo(totaux, "Total :", formatMontant(total) + " FCFA");
+                String taux = facture.getTauxPriseEnCharge() == null ? "" : " (" + formatMontant(facture.getTauxPriseEnCharge()) + " %)";
+                ajouterLigneInfo(totaux, "Part " + facture.getOrganisme().getNom() + taux + " :",
+                        "- " + formatMontant(facture.partOrganismeEffective()) + " FCFA");
+                aPayer = facture.partPatientEffective();
+            }
+            PdfPCell libTotal = new PdfPCell(new Phrase(facture.partOrganismeEffective() > 0 ? "NET À PAYER PATIENT :" : "TOTAL À PAYER :", GRAS_FONT));
             libTotal.setBorder(Rectangle.TOP);
-            PdfPCell valTotal = new PdfPCell(new Phrase(formatMontant(total) + " FCFA", GRAS_FONT));
+            PdfPCell valTotal = new PdfPCell(new Phrase(formatMontant(aPayer) + " FCFA", GRAS_FONT));
             valTotal.setBorder(Rectangle.TOP);
             valTotal.setHorizontalAlignment(Element.ALIGN_RIGHT);
             totaux.addCell(libTotal);
