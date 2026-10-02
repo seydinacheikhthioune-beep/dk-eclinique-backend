@@ -77,8 +77,7 @@ public class PdfService {
             document.add(new Paragraph(" "));
 
             double sousTotal = lignes.stream().mapToDouble(l -> l.getMontant() != null ? l.getMontant() : 0).sum();
-            double tva = sousTotal * 0.18;
-            double total = sousTotal + tva;
+            double total = sousTotal;
             if (facture.getRemise() != null && facture.getRemise() > 0) {
                 total = Math.max(total - facture.getRemise(), 0);
             }
@@ -87,7 +86,6 @@ public class PdfService {
             totaux.setWidthPercentage(50);
             totaux.setHorizontalAlignment(Element.ALIGN_RIGHT);
             ajouterLigneInfo(totaux, "Sous-total :", formatMontant(sousTotal) + " FCFA");
-            ajouterLigneInfo(totaux, "TVA (18%) :", formatMontant(tva) + " FCFA");
             if (facture.getRemise() != null && facture.getRemise() > 0) {
                 ajouterLigneInfo(totaux, "Remise :", formatMontant(facture.getRemise()) + " FCFA");
             }
