@@ -7,6 +7,11 @@ import com.eclinique.exception.ResourceNotFoundException;
 import com.eclinique.model.Patient;
 import com.eclinique.model.Sexe;
 import com.eclinique.repository.OrganismeRepository;
+import com.eclinique.repository.FactureRepository;
+import com.eclinique.repository.NotificationRepository;
+import com.eclinique.exception.BusinessException;
+import com.eclinique.model.Facture;
+import com.eclinique.model.StatutFacture;
 import com.eclinique.repository.PatientRepository;
 import com.eclinique.model.Organisme;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +49,8 @@ public class PatientService {
 
     private final PatientRepository patientRepository;
     private final OrganismeRepository organismeRepository;
+    private final FactureRepository factureRepository;
+    private final NotificationRepository notificationRepository;
 
     public List<Patient> findAll() {
         return patientRepository.findAll().stream()
@@ -251,9 +258,23 @@ public class PatientService {
         return patientRepository.save(patient);
     }
 
+    /**
+     * Supprime le patient avec ses consultations, rendez-vous, factures non payées et notifications.
+     * Refusé s'il a des factures payées, pour ne pas fausser la comptabilité.
+     * Les encaissements d'accueil sont conservés (ils gardent le nom du patient).
+     */
     @Audite(action = TypeActionAudit.SUPPRESSION, entite = "Patient")
     public void delete(Long id) {
-        patientRepository.deleteById(id);
+        Patient patient = findById(id);
+        List<Facture> factures = factureRepository.findByPatientId(id);
+        long payees = factures.stream().filter(f -> f.getStatut() == StatutFacture.PAYEE).count();
+        if (payees > 0) {
+            throw new BusinessException("Impossible de supprimer " + patient.getPrenom() + " " + patient.getNom()
+                    + " : " + payees + " facture(s) payée(s) lui sont rattachées.");
+        }
+        factureRepository.deleteAll(factures);
+        notificationRepository.deleteByPatientId(id);
+        patientRepository.delete(patient);
     }
 
     private Organisme resoudreOrganisme(Organisme organisme) {

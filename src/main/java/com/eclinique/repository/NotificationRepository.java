@@ -9,5 +9,6 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     List<Notification> findByDestinataireIdOrderByDateCreationDesc(Long destinataireId);
     long countByDestinataireIdAndLueFalse(Long destinataireId);
     boolean existsByDestinataireIdAndPatientIdAndType(Long destinataireId, Long patientId, String type);
+    void deleteByPatientId(Long patientId);
     boolean existsByDestinataireIdAndRendezVousIdAndType(Long destinataireId, Long rendezVousId, String type);
 }
