@@ -3,11 +3,13 @@ package com.eclinique.controller;
 import com.eclinique.dto.UtilisateurRequest;
 import com.eclinique.model.Role;
 import com.eclinique.model.Utilisateur;
+import com.eclinique.security.UtilisateurPrincipal;
 import com.eclinique.service.UtilisateurService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -66,8 +68,8 @@ public class UtilisateurController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        utilisateurService.delete(id);
+    public ResponseEntity<Void> delete(@PathVariable Long id, @AuthenticationPrincipal UtilisateurPrincipal principal) {
+        utilisateurService.delete(id, principal.getId());
         return ResponseEntity.noContent().build();
     }
 }

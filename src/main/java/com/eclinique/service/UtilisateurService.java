@@ -8,8 +8,10 @@ import com.eclinique.dto.UtilisateurRequest;
 import com.eclinique.exception.BusinessException;
 import com.eclinique.exception.ResourceNotFoundException;
 import com.eclinique.model.Utilisateur;
+import com.eclinique.repository.NotificationRepository;
 import com.eclinique.repository.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +29,7 @@ public class UtilisateurService {
 
     private final UtilisateurRepository utilisateurRepository;
     private final PasswordEncoder passwordEncoder;
+    private final NotificationRepository notificationRepository;
 
     public List<Utilisateur> findAll() {
         return utilisateurRepository.findAll();
@@ -95,8 +98,20 @@ public class UtilisateurService {
     }
 
     @Audite(action = TypeActionAudit.SUPPRESSION, entite = "Utilisateur")
-    public void delete(Long id) {
-        utilisateurRepository.deleteById(id);
+    public void delete(Long id, Long idConnecte) {
+        Utilisateur u = findById(id);
+        if (id.equals(idConnecte)) {
+            throw new BusinessException("Vous ne pouvez pas supprimer votre propre compte");
+        }
+        notificationRepository.deleteByDestinataireId(id);
+        try {
+            utilisateurRepository.delete(u);
+            utilisateurRepository.flush();
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessException("Impossible de supprimer " + u.getPrenom() + " " + u.getNom()
+                    + " : des consultations, rendez-vous, paiements ou mouvements de stock lui sont rattachés."
+                    + " Désactivez plutôt son compte.");
+        }
     }
 
     @Audite(action = TypeActionAudit.MODIFICATION, entite = "Profil")
