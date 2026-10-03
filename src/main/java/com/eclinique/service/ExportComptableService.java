@@ -93,7 +93,7 @@ public class ExportComptableService {
         double recettes = encPatients + encOrganismes + facTotal;
 
         Row titre = s.createRow(0);
-        cellule(titre, 0, "Export comptable — SEYNI SY MEDICAL", st.titre);
+        cellule(titre, 0, "Export comptable — CABINET MEDICAL DEMBA BODIEL SY", st.titre);
         s.addMergedRegion(new CellRangeAddress(0, 0, 0, 2));
         cellule(s.createRow(1), 0, "Période du " + debut.format(FMT) + " au " + fin.format(FMT), null);
         cellule(s.createRow(2), 0, "Généré le " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")), null);

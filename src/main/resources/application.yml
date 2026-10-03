@@ -61,7 +61,7 @@ app:
   mail:
     # Adresse d'expédition (par défaut MAIL_USERNAME) et nom affiché
     expediteur: ${MAIL_FROM:${MAIL_USERNAME:}}
-    nom-expediteur: ${MAIL_FROM_NAME:SEYNI SY MEDICAL}
+    nom-expediteur: ${MAIL_FROM_NAME:Cabinet Medical Demba Bodiel SY}
     # Destinataire par défaut des exports comptables (plusieurs adresses séparées par des virgules)
     comptable: ${COMPTABLE_EMAIL:}
 

@@ -9,6 +9,8 @@ import com.itextpdf.text.pdf.draw.LineSeparator;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -21,7 +23,9 @@ public class PdfService {
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter DATE_HEURE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
-    private static final Font TITRE_FONT = new Font(Font.FontFamily.HELVETICA, 20, Font.BOLD, new BaseColor(25, 60, 110));
+    private static final String NOM_CABINET = "CABINET MEDICAL DEMBA BODIEL SY";
+
+    private static final Font TITRE_FONT = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD, new BaseColor(25, 60, 110));
     private static final Font SOUS_TITRE_FONT = new Font(Font.FontFamily.HELVETICA, 13, Font.BOLD, new BaseColor(25, 60, 110));
     private static final Font NORMAL_FONT = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL);
     private static final Font GRAS_FONT = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD);
@@ -307,7 +311,14 @@ public class PdfService {
     // ==================== OUTILS COMMUNS ====================
 
     private void enTete(Document document, String titre) throws DocumentException {
-        Paragraph clinique = new Paragraph("E-CLINIQUE", TITRE_FONT);
+        Image logo = chargerLogo();
+        if (logo != null) {
+            logo.scaleToFit(55, 55);
+            logo.setAlignment(Element.ALIGN_CENTER);
+            document.add(logo);
+        }
+
+        Paragraph clinique = new Paragraph(NOM_CABINET, TITRE_FONT);
         clinique.setAlignment(Element.ALIGN_CENTER);
         document.add(clinique);
 
@@ -320,6 +331,15 @@ public class PdfService {
         ligne.setLineColor(new BaseColor(25, 60, 110));
         document.add(new Chunk(ligne));
         document.add(new Paragraph(" "));
+    }
+
+    /** Logo du cabinet (src/main/resources/logo.png) ; null s'il est absent ou illisible. */
+    private Image chargerLogo() {
+        try (InputStream in = getClass().getResourceAsStream("/logo.png")) {
+            return in == null ? null : Image.getInstance(in.readAllBytes());
+        } catch (IOException | BadElementException e) {
+            return null;
+        }
     }
 
     private void piedDePage(Document document, String message) throws DocumentException {

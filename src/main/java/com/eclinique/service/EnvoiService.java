@@ -88,7 +88,7 @@ public class EnvoiService {
                 ? "Pris en charge par " + facture.getOrganisme().getNom() + " : " + montant(facture.partOrganismeEffective()) + " FCFA\n"
                 + "Reste à votre charge : " + montant(facture.partPatientEffective()) + " FCFA\n" : "")
                 + messageLibre(req) + signature();
-        emailService.envoyer(destinataires, "Votre facture " + facture.getNumeroFacture() + " — SEYNI SY MEDICAL", texte,
+        emailService.envoyer(destinataires, "Votre facture " + facture.getNumeroFacture() + " — CABINET MEDICAL DEMBA BODIEL SY", texte,
                 List.of(new EmailService.PieceJointe("facture_" + facture.getNumeroFacture() + ".pdf",
                         pdfService.genererRecuFacture(facture), PDF)));
         facture.setDateEnvoi(LocalDateTime.now());
@@ -108,10 +108,10 @@ public class EnvoiService {
         }
         LocalDate debut = req.getDebut(), fin = req.getFin();
         String periode = debut.format(FMT) + " au " + fin.format(FMT);
-        String texte = "Bonjour,\n\nVeuillez trouver ci-joint l'export comptable de SEYNI SY MEDICAL pour la période du "
+        String texte = "Bonjour,\n\nVeuillez trouver ci-joint l'export comptable de CABINET MEDICAL DEMBA BODIEL SY pour la période du "
                 + periode + " (synthèse, factures patients, factures assurances / IPM, encaissements et paiements des employés).\n"
                 + messageLibre(req) + signature();
-        emailService.envoyer(destinataires, "Export comptable du " + periode + " — SEYNI SY MEDICAL", texte,
+        emailService.envoyer(destinataires, "Export comptable du " + periode + " — CABINET MEDICAL DEMBA BODIEL SY", texte,
                 List.of(new EmailService.PieceJointe(exportService.nomFichier(debut, fin), exportService.exporter(debut, fin), XLSX)));
         return new EnvoiResultat(null, exportService.nomFichier(debut, fin), null, String.join(", ", destinataires), true,
                 "Export envoyé");
@@ -126,7 +126,7 @@ public class EnvoiService {
                 + "Montant à régler : " + montant(facture.getMontantTotal()) + " FCFA\n"
                 + (message == null || message.isBlank() ? "" : "\n" + message.trim() + "\n")
                 + signature();
-        emailService.envoyer(destinataires, "Facture " + facture.getNumero() + " — SEYNI SY MEDICAL", texte,
+        emailService.envoyer(destinataires, "Facture " + facture.getNumero() + " — CABINET MEDICAL DEMBA BODIEL SY", texte,
                 List.of(new EmailService.PieceJointe("facture_" + facture.getNumero() + ".pdf",
                         pdfService.genererFactureOrganisme(detail), PDF)));
         facture.setDateEnvoi(LocalDateTime.now());
@@ -147,7 +147,7 @@ public class EnvoiService {
     }
 
     private String signature() {
-        return "\nCordialement,\nSEYNI SY MEDICAL\nDarou Khoudoss route de Mboro\nTél : 77 519 35 11 / 76 353 48 42\n";
+        return "\nCordialement,\nCABINET MEDICAL DEMBA BODIEL SY\nDarou Khoudoss route de Mboro\nTél : 77 519 35 11 / 76 353 48 42\n";
     }
 
     private String montant(Double m) {
