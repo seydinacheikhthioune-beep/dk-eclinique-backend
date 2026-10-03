@@ -30,6 +30,10 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        // Comptes de démonstration uniquement à la première installation :
+        // un employé supprimé (ou modifié) par l'admin ne doit pas être recréé au redémarrage.
+        boolean premiereInstallation = utilisateurRepository.count() == 0;
+
         if (!utilisateurRepository.existsByUsername("admin")) {
             Utilisateur admin = Utilisateur.builder()
                     .username("admin")
@@ -49,6 +53,10 @@ public class DataInitializer implements CommandLineRunner {
         organismeSiAbsent("IPM ICS", TypeOrganisme.IPM);
         organismeSiAbsent("IPM GCO", TypeOrganisme.IPM);
         organismeSiAbsent("IPM Tobène Power", TypeOrganisme.IPM);
+
+        if (!premiereInstallation) {
+            return;
+        }
 
         Utilisateur receptionniste = creerSiAbsent("mousampthioune@gmail.com", "moussa.reception", "Thioune", "Moussa", Role.RECEPTIONNISTE, "Reception@123");
         Utilisateur medecin1 = creerSiAbsent("eydina.cheikh.thioune@gmail.com", "dr.eydina", "Thioune", "Eydina Cheikh", Role.MEDECIN, "Medecin@123");
@@ -77,7 +85,9 @@ public class DataInitializer implements CommandLineRunner {
 
     private Utilisateur creerSiAbsent(String email, String username, String nom, String prenom,
                                       Role role, String password) {
-        return utilisateurRepository.findByEmail(email).orElseGet(() -> utilisateurRepository.save(Utilisateur.builder()
+        return utilisateurRepository.findByUsername(username)
+                .or(() -> utilisateurRepository.findByEmail(email))
+                .orElseGet(() -> utilisateurRepository.save(Utilisateur.builder()
                 .username(username)
                 .password(passwordEncoder.encode(password))
                 .email(email)
