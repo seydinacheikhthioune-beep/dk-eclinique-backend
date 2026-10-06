@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface FactureRepository extends JpaRepository<Facture, Long> {
+    boolean existsByOrganismeId(Long organismeId);
+
     long countByConsultationIsNotNull();
     long countByDateAdmissionIsNotNull();
     @Query("select coalesce(sum(f.montantTotal), 0) from Facture f where f.consultation is not null")

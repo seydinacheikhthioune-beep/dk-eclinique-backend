@@ -9,6 +9,7 @@ public interface FactureOrganismeRepository extends JpaRepository<FactureOrganis
     List<FactureOrganisme> findAllByOrderByDateEmissionDesc();
     List<FactureOrganisme> findByOrganismeIdOrderByDateEmissionDesc(Long organismeId);
     boolean existsByNumero(String numero);
+    boolean existsByOrganismeId(Long organismeId);
     List<FactureOrganisme> findByDateEmissionGreaterThanEqualAndDateEmissionLessThanOrderByDateEmissionAsc(
             java.time.LocalDateTime debut, java.time.LocalDateTime fin);
     List<FactureOrganisme> findByStatutAndDateEnvoiIsNullOrderByDateEmissionAsc(com.eclinique.model.StatutFacture statut);

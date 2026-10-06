@@ -1,6 +1,9 @@
 package com.eclinique.service;
 
+import com.eclinique.audit.Audite;
+import com.eclinique.audit.TypeActionAudit;
 import com.eclinique.dto.CreanceOrganismeResponse;
+import com.eclinique.exception.BusinessException;
 import com.eclinique.exception.ResourceNotFoundException;
 import com.eclinique.model.FactureOrganisme;
 import com.eclinique.model.Organisme;
@@ -9,6 +12,7 @@ import com.eclinique.repository.EncaissementRepository;
 import com.eclinique.repository.FactureOrganismeRepository;
 import com.eclinique.repository.FactureRepository;
 import com.eclinique.repository.OrganismeRepository;
+import com.eclinique.repository.PatientRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +30,7 @@ public class OrganismeService {
     private final EncaissementRepository encaissementRepository;
     private final FactureOrganismeRepository factureOrganismeRepository;
     private final FactureRepository factureRepository;
+    private final PatientRepository patientRepository;
 
     @Transactional(readOnly = true)
     public List<Organisme> findAll(boolean actifsSeulement) {
@@ -58,6 +63,22 @@ public class OrganismeService {
         organisme.setContact(donnees.getContact());
         organisme.setActif(donnees.isActif());
         return organismeRepository.save(organisme);
+    }
+
+    /**
+     * Supprime un organisme saisi par erreur. Un organisme déjà utilisé (patients assurés, factures,
+     * prises en charge à l'accueil) est conservé pour l'historique : il faut alors le désactiver.
+     */
+    @Audite(action = TypeActionAudit.SUPPRESSION, entite = "Organisme")
+    public void delete(Long id) {
+        Organisme organisme = findById(id);
+        if (patientRepository.existsByOrganismeId(id) || factureRepository.existsByOrganismeId(id)
+                || factureOrganismeRepository.existsByOrganismeId(id) || encaissementRepository.existsByOrganismeId(id)) {
+            throw new BusinessException("Impossible de supprimer " + organisme.getNom()
+                    + " : des patients, factures ou prises en charge y sont rattachés."
+                    + " Désactivez-le plutôt (case « Actif »).");
+        }
+        organismeRepository.delete(organisme);
     }
 
     @Transactional(readOnly = true)

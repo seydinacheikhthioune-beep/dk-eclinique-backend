@@ -5,6 +5,7 @@ import com.eclinique.model.Organisme;
 import com.eclinique.service.OrganismeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,12 +28,19 @@ public class OrganismeController {
     public List<CreanceOrganismeResponse> creances() { return service.creances(); }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','RECEPTIONNISTE')")
     public Organisme create(@Valid @RequestBody Organisme organisme) { return service.create(organisme); }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','RECEPTIONNISTE')")
     public Organisme update(@PathVariable Long id, @Valid @RequestBody Organisme organisme) {
         return service.update(id, organisme);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','RECEPTIONNISTE')")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

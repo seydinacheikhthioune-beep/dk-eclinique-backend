@@ -9,6 +9,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface EncaissementRepository extends JpaRepository<Encaissement, Long> {
+    boolean existsByOrganismeId(Long organismeId);
+
     List<Encaissement> findAllByOrderByDateEncaissementDesc();
 
     List<Encaissement> findByDateEncaissementGreaterThanEqualAndDateEncaissementLessThan(LocalDateTime debut, LocalDateTime fin);
